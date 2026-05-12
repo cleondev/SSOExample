@@ -4,6 +4,12 @@ using SsoExample.Api.Models;
 using SsoExample.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddJsonFile("appsettings.Required.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.Optional.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
 builder.Services.AddSingleton<InMemorySsoStore>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowCredentials().SetIsOriginAllowed(_ => true)));
