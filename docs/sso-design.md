@@ -199,19 +199,20 @@ Demo hiện có **hai project** để khớp với hai app registration trên Az
    - Bật **Admins and users** nếu muốn user consent; với app nội bộ có thể chỉ dùng admin consent.
 7. Nếu cần phân quyền theo role, vào **App roles** và tạo role như `Admin`, `Support`, `User`. Phần demo local hiện vẫn dùng roles tự phát, nhưng khi chuyển hẳn sang Entra ID thì API nên đọc roles/groups từ token Entra ID.
 
-API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.json` và `src/SsoExample.Api/appsettings.Optional.json`:
+API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.json` và `src/SsoExample.Api/appsettings.Optional.json`. Ở đây **Required** nghĩa là bắt buộc cho flow SSO Microsoft Entra ID; local JWT demo chỉ là flow mô phỏng nên nằm ở Optional.
 
 | File | Key | Ý nghĩa |
 | --- | --- | --- |
-| Required | `Sso:Issuer` / `SigningKey` / token lifetimes | Cấu hình local JWT demo bắt buộc theo convention mới; code vẫn có fallback dev để tránh crash khi thiếu key. |
-| Optional | `Authentication:Provider` | Đặt `MicrosoftEntraId` để thể hiện hướng tích hợp Entra ID. |
-| Optional | `TenantId` / `TenantName` / `Authority` | Tenant mà API tin cậy để validate issuer. |
-| Optional | `Api:AzureAppRegistrationName` | Tên app registration trên Azure: `SSOExample.Api`. |
-| Optional | `Api:ClientId` | Application/client ID của API app registration. |
-| Optional | `Api:ApplicationIdUri` | App ID URI expose API, thường là `api://<api-client-id>`. |
-| Optional | `Api:Audience` | Audience API validate trong access token, thường trùng `ApplicationIdUri`. |
-| Optional | `Api:Scopes:AccessAsUser` | Scope ngắn `access_as_user`; token gửi tới API phải có scope này. |
-| Optional | `AllowedClientApplications` | Danh sách client app registration được phép gọi API, ví dụ `SSOExample.Web`. |
+| Required | `Authentication:Provider` | Đặt `MicrosoftEntraId` để chọn provider SSO. |
+| Required | `Authentication:MicrosoftEntraId:TenantId` / `Authority` | Tenant và issuer/authority mà API tin cậy khi validate token. |
+| Required | `Authentication:MicrosoftEntraId:Api:ClientId` | Application/client ID của API app registration. |
+| Required | `Authentication:MicrosoftEntraId:Api:ApplicationIdUri` | App ID URI expose API, thường là `api://<api-client-id>`. |
+| Required | `Authentication:MicrosoftEntraId:Api:Audience` | Audience API validate trong access token, thường trùng `ApplicationIdUri`. |
+| Required | `Authentication:MicrosoftEntraId:Api:Scopes:AccessAsUser` | Scope ngắn `access_as_user`; token gửi tới API phải có scope này. |
+| Required | `Authentication:MicrosoftEntraId:AllowedClientApplications[].ClientId` | Client app registration được phép gọi API, ví dụ Web app `SSOExample.Web`. |
+| Optional | `Sso:*` | Cấu hình local JWT demo để chạy flow mô phỏng không qua Entra ID. |
+| Optional | `TenantName` / `AzureAppRegistrationName` | Tên hiển thị để dễ đối chiếu với Azure Portal, không phải giá trị kỹ thuật bắt buộc để validate token. |
+| Optional | `AllowedHosts` | Host filtering mặc định của ASP.NET Core. |
 
 ### 11.2. Tạo app registration cho Web: `SSOExample.Web`
 
@@ -221,7 +222,7 @@ API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.j
 4. Trong **Redirect URI**, chọn platform **Single-page application (SPA)** vì jQuery SPA chạy JavaScript/MSAL trong browser.
 5. Thêm redirect URI dev:
    - `https://localhost:5002/auth/callback`
-6. Sau khi tạo, copy **Application (client) ID** -> `MicrosoftEntraId:ClientId` trong `src/SsoExample.Web/appsettings.Optional.json`.
+6. Sau khi tạo, copy **Application (client) ID** -> `MicrosoftEntraId:ClientId` trong `src/SsoExample.Web/appsettings.Required.json`.
 7. Vào **Authentication** của `SSOExample.Web`:
    - Đảm bảo redirect URIs ở trên nằm trong platform **Single-page application**.
    - Thêm **Front-channel logout URL** hoặc logout redirect nếu cần, ví dụ `https://localhost:5002/`.
@@ -230,19 +231,21 @@ API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.j
 9. Chọn delegated permission `access_as_user` rồi **Add permissions**.
 10. Nếu tenant yêu cầu, bấm **Grant admin consent** cho permission vừa thêm.
 
-Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.json` và `src/SsoExample.Web/appsettings.Optional.json`:
+Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.json` và `src/SsoExample.Web/appsettings.Optional.json`. Ở đây **Required** nghĩa là bắt buộc để Web thực hiện login SSO và gọi API bằng access token Entra ID.
 
 | File | Key | Ý nghĩa |
 | --- | --- | --- |
+| Required | `MicrosoftEntraId:TenantId` / `Authority` | Tenant authority để Web/MSAL login user. |
+| Required | `MicrosoftEntraId:ClientId` | Application/client ID của `SSOExample.Web`. |
+| Required | `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA. |
+| Required | `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`. |
 | Required | `Api:BaseUrl` | URL backend API, demo dùng `https://localhost:5001`. |
-| Required | `Api:LocalDemoClientId` | Client ID nội bộ `ssoexample-web` dùng cho local JWT demo. |
-| Optional | `MicrosoftEntraId:TenantId` / `TenantName` / `Authority` | Tenant authority để MSAL login user. |
-| Optional | `MicrosoftEntraId:ClientId` | Application/client ID của `SSOExample.Web`. |
-| Optional | `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA. |
-| Optional | `MicrosoftEntraId:PostLogoutRedirectUri` | URL quay về sau logout. |
-| Optional | `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`. |
+| Required | `Api:Audience` / `Api:RequiredScope` | Audience và scope của API mà Web cần xin token để gọi backend. |
+| Optional | `Api:LocalDemoClientId` | Client ID nội bộ `ssoexample-web` chỉ dùng cho local JWT demo. |
+| Optional | `MicrosoftEntraId:TenantName` | Tên hiển thị tenant để dễ đối chiếu với Azure Portal. |
+| Optional | `MicrosoftEntraId:PostLogoutRedirectUri` | URL quay về sau logout nếu app bật logout redirect. |
 | Optional | `MicrosoftEntraId:CacheLocation` | Nơi lưu token phía browser, demo dùng `sessionStorage`. |
-| Optional | `Api:Audience` / `Api:RequiredScope` | Audience và scope của API mà Web cần xin token để gọi backend. |
+| Optional | `AllowedHosts` | Host filtering mặc định của ASP.NET Core. |
 
 ### 11.3. Mapping giá trị Azure vào appsettings
 
@@ -261,7 +264,7 @@ Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.j
 
 - `SSOExample.Api` đã expose scope `access_as_user`.
 - `SSOExample.Web` đã có delegated API permission tới `SSOExample.Api/access_as_user`.
-- Redirect URI trong Azure khớp chính xác với URL trong `src/SsoExample.Web/appsettings.Optional.json`.
+- Redirect URI trong Azure khớp chính xác với URL trong `src/SsoExample.Web/appsettings.Required.json`.
 - API validate đúng `Authority`, `Audience` và scope.
 - Không đặt `client secret` trong Web appsettings, JavaScript, hoặc file tĩnh vì jQuery SPA là public client.
 - Với production, nên dùng Key Vault/App Configuration cho cấu hình theo môi trường và không commit giá trị thật của tenant/client IDs nếu repo public.
