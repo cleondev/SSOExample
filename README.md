@@ -50,17 +50,17 @@ Tài khoản demo của local JWT flow:
 
 ## Cấu hình Microsoft Entra ID
 
-Repo đã tách rõ hai appsettings theo đúng hai ứng dụng:
+Repo đã tách rõ cấu hình theo đúng hai ứng dụng và theo mức độ bắt buộc của **flow SSO Microsoft Entra ID**:
 
-- API app registration tên Azure đề xuất: `SSOExample.Api`, cấu hình tại `src/SsoExample.Api/appsettings.json`.
-- Web app registration tên Azure đề xuất: `SSOExample.Web`, cấu hình tại `src/SsoExample.Web/appsettings.json`.
+- API app registration tên Azure đề xuất: `SSOExample.Api`, cấu hình SSO bắt buộc tại `src/SsoExample.Api/appsettings.Required.json`, cấu hình local demo/phụ trợ tại `src/SsoExample.Api/appsettings.Optional.json`.
+- Web app registration tên Azure đề xuất: `SSOExample.Web`, cấu hình SSO bắt buộc tại `src/SsoExample.Web/appsettings.Required.json`, cấu hình local demo/phụ trợ tại `src/SsoExample.Web/appsettings.Optional.json`.
 
 Tóm tắt trách nhiệm:
 
 | App | Appsettings giữ gì? |
 | --- | --- |
-| `SsoExample.Api` | Tenant, authority, API app `ClientId`, `ApplicationIdUri`, `Audience`, scope `access_as_user`, danh sách client app được phép gọi API. |
-| `SsoExample.Web` | Tenant, authority, Web app `ClientId`, redirect URI, post logout URI, scopes cần xin, API base URL, local demo client ID và API scope cần attach khi gọi backend. |
+| `SsoExample.Api` | Required: provider, tenant/authority, API app `ClientId`, `ApplicationIdUri`, `Audience`, scope `access_as_user`, client app được phép gọi API. Optional: local JWT demo settings, tenant/app registration display name và `AllowedHosts`. |
+| `SsoExample.Web` | Required: tenant/authority, Web app `ClientId`, redirect URI, scopes cần xin, API base URL, audience và required scope. Optional: local demo client ID, post logout redirect URI, cache location, tenant display name và `AllowedHosts`. |
 
 Xem chi tiết mục **Appsettings và các bước tạo Microsoft Entra ID apps** trong [Thiết kế SSO](docs/sso-design.md).
 
