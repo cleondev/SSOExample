@@ -1,4 +1,10 @@
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddJsonFile("appsettings.Required.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.Optional.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args);
 var app = builder.Build();
 
 app.UseDefaultFiles();
