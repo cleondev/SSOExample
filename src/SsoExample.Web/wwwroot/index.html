@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SSOExample Web - jQuery SPA</title>
+  <link rel="stylesheet" href="/site.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <h1>SSOExample Web - jQuery SPA</h1>
+    <p>
+      Web .NET 10 host jQuery SPA ở project riêng <code>src/SsoExample.Web</code>.
+      SPA gọi API backend tại <code>https://localhost:5001</code> bằng bearer token.
+    </p>
+    <p class="warning">Tài khoản demo local JWT: admin/Admin@123, alice/Alice@123, bob/Bob@123.</p>
+    <section class="panel">
+      <h2>Login with password</h2>
+      <label for="username">User name hoặc email</label><input id="username" value="admin">
+      <label for="password">Password</label><input id="password" type="password" value="Admin@123">
+      <button id="login">Đăng nhập</button>
+      <button id="loadMe">Gọi /api/me</button>
+      <button id="loadOrders">Gọi /api/orders</button>
+    </section>
+    <section class="panel">
+      <h2>Backdoor: admin login as user</h2>
+      <label for="targetUser">User cần impersonate</label>
+      <select id="targetUser">
+        <option value="22222222-2222-2222-2222-222222222222">Alice</option>
+        <option value="33333333-3333-3333-3333-333333333333">Bob</option>
+      </select>
+      <label for="reason">Lý do</label><textarea id="reason">Hỗ trợ kiểm tra lỗi đơn hàng theo ticket #12345</textarea>
+      <button id="loginAs">Login as</button>
+    </section>
+    <section class="panel"><h2>Kết quả</h2><pre id="output">Chưa có dữ liệu.</pre></section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

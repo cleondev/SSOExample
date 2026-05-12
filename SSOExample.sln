@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SsoExample.Api", "src\SsoExample.Api\SsoExample.Api.csproj", "{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SsoExample.Web", "src\SsoExample.Web\SsoExample.Web.csproj", "{8D6F873B-4819-4C76-9CE5-854569590DB4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,5 +16,9 @@ Global
 		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

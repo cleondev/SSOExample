@@ -40,9 +40,9 @@ public sealed record AuditLogRecord(
     string UserAgent,
     string? Reason);
 
-public sealed record LoginPasswordRequest(string UserNameOrEmail, string Password, string ClientId = "jquery-spa");
-public sealed record LoginAsRequest(Guid TargetUserId, string Reason, string ClientId = "jquery-spa");
-public sealed record RefreshTokenRequest(string RefreshToken, string ClientId = "jquery-spa");
+public sealed record LoginPasswordRequest(string UserNameOrEmail, string Password, string ClientId = "ssoexample-web");
+public sealed record LoginAsRequest(Guid TargetUserId, string Reason, string ClientId = "ssoexample-web");
+public sealed record RefreshTokenRequest(string RefreshToken, string ClientId = "ssoexample-web");
 public sealed record ExchangeCodeRequest(string Code, string RedirectUri, string ClientId, string? CodeVerifier);
 public sealed record TokenResponse(string AccessToken, string RefreshToken, DateTimeOffset ExpiresAt, UserProfile User, ImpersonationInfo? Impersonation);
 public sealed record UserProfile(Guid Id, string UserName, string Email, string DisplayName, string[] Roles);
