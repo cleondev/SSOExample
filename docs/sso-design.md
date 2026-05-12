@@ -199,18 +199,19 @@ Demo hiện có **hai project** để khớp với hai app registration trên Az
    - Bật **Admins and users** nếu muốn user consent; với app nội bộ có thể chỉ dùng admin consent.
 7. Nếu cần phân quyền theo role, vào **App roles** và tạo role như `Admin`, `Support`, `User`. Phần demo local hiện vẫn dùng roles tự phát, nhưng khi chuyển hẳn sang Entra ID thì API nên đọc roles/groups từ token Entra ID.
 
-API appsettings mẫu nằm tại `src/SsoExample.Api/appsettings.json`:
+API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.json` và `src/SsoExample.Api/appsettings.Optional.json`:
 
-| Key | Ý nghĩa |
-| --- | --- |
-| `Authentication:Provider` | Đặt `MicrosoftEntraId` để thể hiện hướng tích hợp Entra ID. |
-| `TenantId` / `TenantName` / `Authority` | Tenant mà API tin cậy để validate issuer. |
-| `Api:AzureAppRegistrationName` | Tên app registration trên Azure: `SSOExample.Api`. |
-| `Api:ClientId` | Application/client ID của API app registration. |
-| `Api:ApplicationIdUri` | App ID URI expose API, thường là `api://<api-client-id>`. |
-| `Api:Audience` | Audience API validate trong access token, thường trùng `ApplicationIdUri`. |
-| `Api:Scopes:AccessAsUser` | Scope ngắn `access_as_user`; token gửi tới API phải có scope này. |
-| `AllowedClientApplications` | Danh sách client app registration được phép gọi API, ví dụ `SSOExample.Web`. |
+| File | Key | Ý nghĩa |
+| --- | --- | --- |
+| Required | `Sso:Issuer` / `SigningKey` / token lifetimes | Cấu hình local JWT demo bắt buộc theo convention mới; code vẫn có fallback dev để tránh crash khi thiếu key. |
+| Optional | `Authentication:Provider` | Đặt `MicrosoftEntraId` để thể hiện hướng tích hợp Entra ID. |
+| Optional | `TenantId` / `TenantName` / `Authority` | Tenant mà API tin cậy để validate issuer. |
+| Optional | `Api:AzureAppRegistrationName` | Tên app registration trên Azure: `SSOExample.Api`. |
+| Optional | `Api:ClientId` | Application/client ID của API app registration. |
+| Optional | `Api:ApplicationIdUri` | App ID URI expose API, thường là `api://<api-client-id>`. |
+| Optional | `Api:Audience` | Audience API validate trong access token, thường trùng `ApplicationIdUri`. |
+| Optional | `Api:Scopes:AccessAsUser` | Scope ngắn `access_as_user`; token gửi tới API phải có scope này. |
+| Optional | `AllowedClientApplications` | Danh sách client app registration được phép gọi API, ví dụ `SSOExample.Web`. |
 
 ### 11.2. Tạo app registration cho Web: `SSOExample.Web`
 
@@ -220,7 +221,7 @@ API appsettings mẫu nằm tại `src/SsoExample.Api/appsettings.json`:
 4. Trong **Redirect URI**, chọn platform **Single-page application (SPA)** vì jQuery SPA chạy JavaScript/MSAL trong browser.
 5. Thêm redirect URI dev:
    - `https://localhost:5002/auth/callback`
-6. Sau khi tạo, copy **Application (client) ID** -> `MicrosoftEntraId:ClientId` trong `src/SsoExample.Web/appsettings.json`.
+6. Sau khi tạo, copy **Application (client) ID** -> `MicrosoftEntraId:ClientId` trong `src/SsoExample.Web/appsettings.Optional.json`.
 7. Vào **Authentication** của `SSOExample.Web`:
    - Đảm bảo redirect URIs ở trên nằm trong platform **Single-page application**.
    - Thêm **Front-channel logout URL** hoặc logout redirect nếu cần, ví dụ `https://localhost:5002/`.
@@ -229,19 +230,19 @@ API appsettings mẫu nằm tại `src/SsoExample.Api/appsettings.json`:
 9. Chọn delegated permission `access_as_user` rồi **Add permissions**.
 10. Nếu tenant yêu cầu, bấm **Grant admin consent** cho permission vừa thêm.
 
-Web appsettings mẫu nằm tại `src/SsoExample.Web/appsettings.json`:
+Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.json` và `src/SsoExample.Web/appsettings.Optional.json`:
 
-| Key | Ý nghĩa |
-| --- | --- |
-| `MicrosoftEntraId:TenantId` / `TenantName` / `Authority` | Tenant authority để MSAL login user. |
-| `MicrosoftEntraId:ClientId` | Application/client ID của `SSOExample.Web`. |
-| `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA. |
-| `MicrosoftEntraId:PostLogoutRedirectUri` | URL quay về sau logout. |
-| `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`. |
-| `MicrosoftEntraId:CacheLocation` | Nơi lưu token phía browser, demo dùng `sessionStorage`. |
-| `Api:BaseUrl` | URL backend API, demo dùng `https://localhost:5001`. |
-| `Api:LocalDemoClientId` | Client ID nội bộ `ssoexample-web` dùng cho local JWT demo. |
-| `Api:Audience` / `Api:RequiredScope` | Audience và scope của API mà Web cần xin token để gọi backend. |
+| File | Key | Ý nghĩa |
+| --- | --- | --- |
+| Required | `Api:BaseUrl` | URL backend API, demo dùng `https://localhost:5001`. |
+| Required | `Api:LocalDemoClientId` | Client ID nội bộ `ssoexample-web` dùng cho local JWT demo. |
+| Optional | `MicrosoftEntraId:TenantId` / `TenantName` / `Authority` | Tenant authority để MSAL login user. |
+| Optional | `MicrosoftEntraId:ClientId` | Application/client ID của `SSOExample.Web`. |
+| Optional | `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA. |
+| Optional | `MicrosoftEntraId:PostLogoutRedirectUri` | URL quay về sau logout. |
+| Optional | `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`. |
+| Optional | `MicrosoftEntraId:CacheLocation` | Nơi lưu token phía browser, demo dùng `sessionStorage`. |
+| Optional | `Api:Audience` / `Api:RequiredScope` | Audience và scope của API mà Web cần xin token để gọi backend. |
 
 ### 11.3. Mapping giá trị Azure vào appsettings
 
@@ -260,7 +261,7 @@ Web appsettings mẫu nằm tại `src/SsoExample.Web/appsettings.json`:
 
 - `SSOExample.Api` đã expose scope `access_as_user`.
 - `SSOExample.Web` đã có delegated API permission tới `SSOExample.Api/access_as_user`.
-- Redirect URI trong Azure khớp chính xác với URL trong `src/SsoExample.Web/appsettings.json`.
+- Redirect URI trong Azure khớp chính xác với URL trong `src/SsoExample.Web/appsettings.Optional.json`.
 - API validate đúng `Authority`, `Audience` và scope.
 - Không đặt `client secret` trong Web appsettings, JavaScript, hoặc file tĩnh vì jQuery SPA là public client.
 - Với production, nên dùng Key Vault/App Configuration cho cấu hình theo môi trường và không commit giá trị thật của tenant/client IDs nếu repo public.
