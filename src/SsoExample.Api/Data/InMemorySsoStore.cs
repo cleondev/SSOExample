@@ -15,8 +15,7 @@ public sealed class InMemorySsoStore
 
     private readonly List<ClientRecord> _clients =
     [
-        new("jquery-spa", "jQuery SPA", ["/jquery-spa/callback.html", "https://localhost:5001/jquery-spa/callback.html"], true),
-        new("react-spa", "React SPA", ["/react-spa/callback.html", "https://localhost:5001/react-spa/callback.html"], true)
+        new("ssoexample-web", "SSOExample.Web jQuery SPA", ["https://localhost:5002/auth/callback", "https://localhost:5002/"], true)
     ];
 
     private readonly List<AuthCodeRecord> _codes = [];
