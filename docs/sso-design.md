@@ -231,14 +231,14 @@ API appsettings được tách thành `src/SsoExample.Api/appsettings.Required.j
 9. Chọn delegated permission `access_as_user` rồi **Add permissions**.
 10. Nếu tenant yêu cầu, bấm **Grant admin consent** cho permission vừa thêm.
 
-Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.json` và `src/SsoExample.Web/appsettings.Optional.json`. Ở đây **Required** nghĩa là bắt buộc để Web thực hiện login SSO và gọi API bằng access token Entra ID.
+Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.json` và `src/SsoExample.Web/appsettings.Optional.json`. Ở đây **Required** chỉ giữ các giá trị tối thiểu để Web biết tenant/client và gọi API; các giá trị phục vụ redirect/logout hoặc danh sách scopes có thể để trong file optional hoặc cấu hình trực tiếp trong JavaScript/MSAL khi bật flow Entra ID thật.
 
 | File | Key | Ý nghĩa |
 | --- | --- | --- |
 | Required | `MicrosoftEntraId:TenantId` / `Authority` | Tenant authority để Web/MSAL login user. |
 | Required | `MicrosoftEntraId:ClientId` | Application/client ID của `SSOExample.Web`. |
-| Required | `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA. |
-| Required | `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`. |
+| Optional | `MicrosoftEntraId:RedirectUris` | Redirect URIs đã khai báo trong Azure cho Web host jQuery SPA; cần cho auth-code/PKCE thực tế nhưng không bắt buộc với local demo hoặc khi redirect URI được cấu hình trực tiếp trong MSAL. |
+| Optional | `MicrosoftEntraId:Scopes` | OIDC scopes và API scope `api://<api-client-id>/access_as_user`; cần khi Web xin token Entra ID nhưng có thể nằm ở config optional hoặc code MSAL. |
 | Required | `Api:BaseUrl` | URL backend API, demo dùng `https://localhost:5001`. |
 | Required | `Api:Audience` / `Api:RequiredScope` | Audience và scope của API mà Web cần xin token để gọi backend. |
 | Optional | `Api:LocalDemoClientId` | Client ID nội bộ `ssoexample-web` chỉ dùng cho local JWT demo. |
@@ -258,7 +258,7 @@ Web appsettings được tách thành `src/SsoExample.Web/appsettings.Required.j
 | API Application ID URI | `Authentication:MicrosoftEntraId:Api:ApplicationIdUri` và `Audience` | `Api:Audience` |
 | Web app name | Trong `AllowedClientApplications[].AzureAppRegistrationName = SSOExample.Web` | Tên app registration là `SSOExample.Web`. |
 | Web app client ID | Trong `AllowedClientApplications[].ClientId` | `MicrosoftEntraId:ClientId` |
-| Web redirect URIs | Không cần ở API | `MicrosoftEntraId:RedirectUris` |
+| Web redirect URIs | Không cần ở API | `MicrosoftEntraId:RedirectUris` nếu muốn quản lý redirect URI từ appsettings; nếu không, cấu hình trong Azure/MSAL là đủ. |
 
 ### 11.4. Checklist sau khi tạo app trên Azure
 
