@@ -3,38 +3,299 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SSOExample Web - jQuery SPA</title>
+  <title>SSOExample - Demo SSO trên .NET 10</title>
   <link rel="stylesheet" href="/site.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='Segoe UI,Arial' font-size='34' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E">
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
-  <main class="shell">
-    <h1>SSOExample Web - jQuery SPA</h1>
-    <p>
-      Web .NET 10 host jQuery SPA ở project riêng <code>src/SsoExample.Web</code>.
-      SPA gọi API backend tại <code>https://localhost:5001</code> bằng bearer token.
-    </p>
-    <p class="warning">Tài khoản demo local JWT: admin/Admin@123, alice/Alice@123, bob/Bob@123.</p>
-    <section class="panel">
-      <h2>Login with password</h2>
-      <label for="username">User name hoặc email</label><input id="username" value="admin">
-      <label for="password">Password</label><input id="password" type="password" value="Admin@123">
-      <button id="login">Đăng nhập</button>
-      <button id="loadMe">Gọi /api/me</button>
-      <button id="loadOrders">Gọi /api/orders</button>
+  <div id="impersonationBanner" class="impersonation-banner" hidden>
+    <span class="dot"></span>
+    <span class="text"></span>
+    <button id="endImpersonation" class="banner-btn">Kết thúc login-as</button>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#/" data-nav>
+        <span class="brand-logo">S</span>
+        <span class="brand-text">SSO<span class="brand-accent">Example</span></span>
+      </a>
+      <nav class="nav">
+        <a href="#/" data-nav data-route="home">Trang chủ</a>
+        <a href="#/dashboard" data-nav data-route="dashboard" data-auth>Dashboard</a>
+        <a href="#/admin" data-nav data-route="admin" data-role="Admin">Admin</a>
+        <a href="#/about" data-nav data-route="about">Về SSO</a>
+      </nav>
+      <div class="user-area">
+        <div id="userPill" class="user-pill" hidden>
+          <span class="avatar"></span>
+          <span class="user-meta">
+            <span class="user-name"></span>
+            <span class="user-role"></span>
+          </span>
+          <button id="logout" class="ghost">Đăng xuất</button>
+        </div>
+        <a id="signInButton" class="primary" href="#/signin">Đăng nhập</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <strong>SSOExample</strong> · .NET 10 · jQuery SPA · Demo Microsoft Entra ID
+      </div>
+      <div class="footer-links">
+        <a href="https://learn.microsoft.com/azure/active-directory/develop/v2-overview" target="_blank" rel="noreferrer">Microsoft Entra ID</a>
+        <a href="https://datatracker.ietf.org/doc/html/rfc7636" target="_blank" rel="noreferrer">PKCE (RFC 7636)</a>
+        <a href="#/about" data-nav>Kiến trúc</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== Templates ===== -->
+  <template id="tpl-home">
+    <section class="hero">
+      <div class="hero-text">
+        <span class="eyebrow">Demo SSO · Authorization Code + PKCE</span>
+        <h1>Một mẫu SSO tối giản cho .NET 10</h1>
+        <p>
+          Hai project tách biệt: Web host jQuery SPA và Resource API. Đăng nhập qua Microsoft Entra ID,
+          gọi API bằng bearer token, kèm flow <em>login-as</em> có kiểm soát cho admin.
+        </p>
+        <div class="hero-cta">
+          <a class="primary lg" href="#/signin">Bắt đầu đăng nhập</a>
+          <a class="ghost lg" href="#/about">Xem kiến trúc</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-title">Endpoints chính</div>
+        <ul class="endpoint-list">
+          <li><code>POST</code> /api/auth/login/password</li>
+          <li><code>GET</code> /api/sso/authorize</li>
+          <li><code>POST</code> /api/sso/token</li>
+          <li><code>POST</code> /api/auth/login-as</li>
+          <li><code>GET</code> /api/me</li>
+          <li><code>GET</code> /api/orders</li>
+        </ul>
+      </div>
     </section>
-    <section class="panel">
-      <h2>Backdoor: admin login as user</h2>
-      <label for="targetUser">User cần impersonate</label>
-      <select id="targetUser">
-        <option value="22222222-2222-2222-2222-222222222222">Alice</option>
-        <option value="33333333-3333-3333-3333-333333333333">Bob</option>
-      </select>
-      <label for="reason">Lý do</label><textarea id="reason">Hỗ trợ kiểm tra lỗi đơn hàng theo ticket #12345</textarea>
-      <button id="loginAs">Login as</button>
+
+    <section class="features">
+      <div class="feature">
+        <div class="feature-icon">1</div>
+        <h3>Sign in with Microsoft</h3>
+        <p>Web SPA redirect user sang Microsoft Entra ID, nhận id/access token theo Authorization Code + PKCE.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">2</div>
+        <h3>Bearer token tới API</h3>
+        <p>Mọi request tới API mang <code>Authorization: Bearer …</code>. API validate issuer, audience, scope, role.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">3</div>
+        <h3>Login-as có audit</h3>
+        <p>Admin impersonate user khi xử lý ticket. Token sống ngắn, banner luôn hiển thị, ghi audit không thể xoá.</p>
+      </div>
     </section>
-    <section class="panel"><h2>Kết quả</h2><pre id="output">Chưa có dữ liệu.</pre></section>
-  </main>
+  </template>
+
+  <template id="tpl-signin">
+    <section class="signin">
+      <h1>Đăng nhập</h1>
+      <p class="lede">Chọn một trong hai flow. Trong production chỉ flow Microsoft Entra ID được dùng; flow password chỉ phục vụ giải thích/local demo.</p>
+      <div class="signin-grid">
+        <article class="panel signin-card primary-card">
+          <div class="signin-badge">Production flow</div>
+          <h2>Sign in with Microsoft</h2>
+          <p>Authorization Code + PKCE. Web tạo <code>code_verifier</code>, redirect user sang Entra ID, nhận <code>code</code>, đổi lấy access token.</p>
+          <button id="ssoStart" class="primary lg block">
+            <span class="ms-logo" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </span>
+            Sign in with Microsoft
+          </button>
+          <p class="muted small">Demo dùng endpoint <code>/api/sso/authorize</code> của API local, đăng nhập với user mặc định <strong>alice</strong>. Khi cấu hình thật, đổi authority sang Microsoft Entra ID tenant.</p>
+        </article>
+
+        <article class="panel signin-card">
+          <div class="signin-badge muted-badge">Local demo</div>
+          <h2>Đăng nhập bằng password</h2>
+          <p class="muted">Chỉ dùng trong dev. Production không nên cho web tự thu password — phải redirect sang IdP.</p>
+          <form id="passwordForm" class="form">
+            <label for="username">User name hoặc email</label>
+            <input id="username" autocomplete="username" value="admin" required>
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" value="Admin@123" required>
+            <button type="submit" class="primary block">Đăng nhập</button>
+          </form>
+          <details class="hint">
+            <summary>Tài khoản demo</summary>
+            <table class="mini">
+              <tr><th>User</th><th>Password</th><th>Role</th></tr>
+              <tr><td>admin</td><td>Admin@123</td><td>Admin</td></tr>
+              <tr><td>alice</td><td>Alice@123</td><td>User</td></tr>
+              <tr><td>bob</td><td>Bob@123</td><td>User, Support</td></tr>
+            </table>
+          </details>
+        </article>
+      </div>
+      <div id="signinError" class="alert error" hidden></div>
+    </section>
+  </template>
+
+  <template id="tpl-dashboard">
+    <section class="dashboard">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Dashboard</span>
+          <h1>Xin chào, <span id="greetName">bạn</span></h1>
+          <p class="lede">Token đang dùng để gọi <code>/api/me</code> và <code>/api/orders</code>. Mọi request đều mang header <code>Authorization: Bearer</code>.</p>
+        </div>
+        <button id="refreshDashboard" class="ghost">Làm mới</button>
+      </header>
+
+      <div class="grid two">
+        <article class="panel">
+          <h2>Thông tin principal</h2>
+          <dl class="props" id="meProps"><dt>Đang tải…</dt><dd></dd></dl>
+        </article>
+
+        <article class="panel">
+          <h2>Đơn hàng của tôi</h2>
+          <table class="table" id="ordersTable">
+            <thead><tr><th>#</th><th>Owner</th><th>Tổng</th><th>Trạng thái</th></tr></thead>
+            <tbody><tr><td colspan="4" class="muted">Đang tải…</td></tr></tbody>
+          </table>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Access token</h2>
+          <button id="copyToken" class="ghost sm">Copy</button>
+        </div>
+        <pre id="tokenView" class="token"></pre>
+        <p class="muted small">Token được decode chỉ ở client để debug. API mới là bên validate chữ ký, audience, scope.</p>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-admin">
+    <section class="admin">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Admin</span>
+          <h1>Quản trị user và audit</h1>
+          <p class="lede">Chỉ role <code>Admin</code> truy cập được. Login-as là backdoor có kiểm soát: bắt buộc lý do tối thiểu 10 ký tự và luôn ghi audit log.</p>
+        </div>
+        <button id="refreshAdmin" class="ghost">Làm mới</button>
+      </header>
+
+      <div class="grid two">
+        <article class="panel">
+          <h2>Users</h2>
+          <table class="table" id="usersTable">
+            <thead><tr><th>User</th><th>Email</th><th>Roles</th></tr></thead>
+            <tbody><tr><td colspan="3" class="muted">Đang tải…</td></tr></tbody>
+          </table>
+        </article>
+
+        <article class="panel">
+          <h2>Login-as (backdoor admin)</h2>
+          <form id="loginAsForm" class="form">
+            <label for="targetUser">User cần impersonate</label>
+            <select id="targetUser" required></select>
+            <label for="reason">Lý do (tối thiểu 10 ký tự)</label>
+            <textarea id="reason" rows="3" minlength="10" required>Hỗ trợ kiểm tra lỗi đơn hàng theo ticket #12345</textarea>
+            <button type="submit" class="danger block">Login as user</button>
+          </form>
+          <p class="muted small">Token impersonation sống ngắn (mặc định 10 phút), banner đỏ luôn hiển thị, không phát refresh token dài hạn.</p>
+        </article>
+      </div>
+
+      <article class="panel">
+        <h2>Audit logs</h2>
+        <table class="table" id="auditTable">
+          <thead><tr><th>Thời điểm</th><th>Action</th><th>Actor</th><th>Subject</th><th>Lý do</th><th>IP</th></tr></thead>
+          <tbody><tr><td colspan="6" class="muted">Đang tải…</td></tr></tbody>
+        </table>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-about">
+    <section class="about">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Kiến trúc</span>
+          <h1>SSO hoạt động thế nào trong demo này?</h1>
+        </div>
+      </header>
+
+      <div class="grid two">
+        <article class="panel">
+          <h2>Web (jQuery SPA)</h2>
+          <ul class="bullets">
+            <li>Public client, không giữ <code>client_secret</code>.</li>
+            <li>Tạo <code>code_verifier</code>/<code>code_challenge</code>, redirect tới Entra ID.</li>
+            <li>Lưu token ở <code>sessionStorage</code> (demo dùng <code>localStorage</code>).</li>
+            <li>Gọi API với <code>Authorization: Bearer</code>.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h2>API (.NET 10 Resource Server)</h2>
+          <ul class="bullets">
+            <li>Validate <code>iss</code>, <code>aud</code>, <code>exp</code>, scope, role.</li>
+            <li>Phát local JWT chỉ trong demo; production dùng token Entra ID.</li>
+            <li>Audit log bất biến cho login, login-as, refresh.</li>
+            <li>Endpoint nghiệp vụ (<code>/api/orders</code>) đòi bearer token hợp lệ.</li>
+          </ul>
+        </article>
+      </div>
+
+      <article class="panel">
+        <h2>Flow Authorization Code + PKCE</h2>
+        <ol class="steps">
+          <li><strong>Web</strong> sinh <code>code_verifier</code> ngẫu nhiên và <code>code_challenge = BASE64URL(SHA256(verifier))</code>.</li>
+          <li><strong>Web</strong> redirect browser tới <code>/authorize</code> kèm <code>client_id</code>, <code>redirect_uri</code>, <code>state</code>, <code>code_challenge</code>.</li>
+          <li><strong>IdP</strong> đăng nhập user, redirect về <code>redirect_uri?code=…&state=…</code>.</li>
+          <li><strong>Web</strong> gọi <code>POST /token</code> với <code>code</code> + <code>code_verifier</code> để đổi access/refresh token.</li>
+          <li><strong>Web</strong> gọi API với bearer token. <strong>API</strong> validate và trả dữ liệu.</li>
+        </ol>
+      </article>
+
+      <article class="panel">
+        <h2>Tài liệu để học sâu</h2>
+        <ul class="bullets">
+          <li><a href="https://learn.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow" target="_blank" rel="noreferrer">Microsoft docs: Auth Code + PKCE</a></li>
+          <li><a href="https://datatracker.ietf.org/doc/html/rfc6749" target="_blank" rel="noreferrer">RFC 6749 - OAuth 2.0</a></li>
+          <li><a href="https://datatracker.ietf.org/doc/html/rfc7636" target="_blank" rel="noreferrer">RFC 7636 - PKCE</a></li>
+          <li>Repo này: <code>docs/sso-design.md</code> và <code>docs/adopting-sso.md</code>.</li>
+        </ul>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-403">
+    <section class="empty">
+      <h1>403 · Không đủ quyền</h1>
+      <p>Trang này chỉ dành cho role <strong>Admin</strong>. Đăng nhập bằng <code>admin / Admin@123</code> trong demo.</p>
+      <a class="primary" href="#/signin">Quay lại đăng nhập</a>
+    </section>
+  </template>
+
+  <template id="tpl-401">
+    <section class="empty">
+      <h1>Bạn chưa đăng nhập</h1>
+      <p>Đăng nhập để xem dashboard và gọi API.</p>
+      <a class="primary" href="#/signin">Đăng nhập</a>
+    </section>
+  </template>
+
   <script src="/app.js"></script>
 </body>
 </html>

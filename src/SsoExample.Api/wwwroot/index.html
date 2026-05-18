@@ -3,17 +3,133 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SSOExample API</title>
+  <title>SSOExample.Api - .NET 10 Resource Server</title>
   <link rel="stylesheet" href="/site.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f172a'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='Segoe UI,Arial' font-size='28' font-weight='800' fill='%2360a5fa'%3EAPI%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-  <main class="shell">
-    <h1>SSOExample API</h1>
-    <p>Project này chỉ giữ API backend. jQuery SPA được host ở project Web riêng.</p>
-    <div class="cards">
-      <a class="card" href="https://localhost:5002/">Mở Web .NET 10 host jQuery SPA</a>
-      <span class="card">Tài liệu trong thư mục docs/</span>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-logo">API</span>
+        <span class="brand-text">SSOExample<span class="brand-accent">.Api</span></span>
+      </div>
+      <div class="topbar-right">
+        <span id="health" class="status-pill"><span class="dot"></span> đang kiểm tra…</span>
+        <a class="primary" href="https://localhost:5002/" target="_blank" rel="noreferrer">Mở Web SPA →</a>
+      </div>
     </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Resource API · .NET 10</span>
+        <h1>API backend cho jQuery SPA</h1>
+        <p>
+          Validate access token, expose endpoint nghiệp vụ, ghi audit log. Project này không host UI người dùng cuối —
+          mở <a href="https://localhost:5002/" target="_blank" rel="noreferrer">Web SPA</a> để thử flow đầy đủ.
+        </p>
+        <div class="hero-meta" id="apiInfo">
+          <span class="meta-item"><strong>Provider</strong> <code>—</code></span>
+          <span class="meta-item"><strong>Authority</strong> <code>—</code></span>
+          <span class="meta-item"><strong>Audience</strong> <code>—</code></span>
+          <span class="meta-item"><strong>Scope</strong> <code>—</code></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <header><span class="tag tag-auth">Auth</span></header>
+        <h3>POST /api/auth/login/password</h3>
+        <p>Login bằng username/password — chỉ phục vụ local demo, production redirect sang Microsoft Entra ID.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-sso">SSO</span></header>
+        <h3>GET /api/sso/authorize</h3>
+        <p>Bắt đầu Authorization Code + PKCE. Trả về <code>code</code> và <code>state</code>.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-sso">SSO</span></header>
+        <h3>POST /api/sso/token</h3>
+        <p>Đổi <code>code</code> + <code>code_verifier</code> lấy access token và refresh token.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-auth">Auth</span></header>
+        <h3>POST /api/auth/token/refresh</h3>
+        <p>Refresh access token. Refresh token rotation: token cũ bị xoá sau khi đổi.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-admin">Admin</span></header>
+        <h3>POST /api/auth/login-as</h3>
+        <p>Backdoor có kiểm soát. Bắt buộc role Admin + reason ≥ 10 ký tự. Audit log immutable.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-biz">Business</span></header>
+        <h3>GET /api/me</h3>
+        <p>Trả về principal hiện tại theo bearer token.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-biz">Business</span></header>
+        <h3>GET /api/orders</h3>
+        <p>Endpoint nghiệp vụ ví dụ. Cần bearer token hợp lệ.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-admin">Admin</span></header>
+        <h3>GET /api/admin/users</h3>
+        <p>Danh sách user. Chỉ Admin truy cập.</p>
+      </article>
+      <article class="card">
+        <header><span class="tag tag-admin">Admin</span></header>
+        <h3>GET /api/admin/audit-logs</h3>
+        <p>Audit log: password_login, sso_authorize, login_as. Chỉ Admin truy cập.</p>
+      </article>
+    </section>
+
+    <section class="docs-cta">
+      <div>
+        <h2>Tài liệu thiết kế và hướng dẫn</h2>
+        <p>Đọc trước khi áp dụng SSO cho site mới.</p>
+      </div>
+      <div class="docs-links">
+        <a href="https://github.com/cleondev/ssoexample/blob/main/docs/sso-design.md" target="_blank" rel="noreferrer">Thiết kế SSO</a>
+        <a href="https://github.com/cleondev/ssoexample/blob/main/docs/adopting-sso.md" target="_blank" rel="noreferrer">Adopting SSO cho site mới</a>
+        <a href="https://github.com/cleondev/ssoexample/blob/main/docs/database-schema.sql" target="_blank" rel="noreferrer">Database schema</a>
+      </div>
+    </section>
   </main>
+
+  <footer class="footer">
+    <strong>SSOExample.Api</strong> · .NET 10 · jQuery SPA host ở project <code>SsoExample.Web</code>.
+  </footer>
+
+  <script>
+    async function loadHealth() {
+      const pill = document.getElementById('health');
+      try {
+        const res = await fetch('/api/health');
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        pill.classList.add('ok');
+        pill.innerHTML = `<span class="dot"></span> ${data.status} · ${data.runtime}`;
+      } catch (err) {
+        pill.classList.add('error');
+        pill.innerHTML = `<span class="dot"></span> không kết nối được`;
+      }
+    }
+    async function loadInfo() {
+      try {
+        const data = await fetch('/api/info').then(r => r.json());
+        const items = document.querySelectorAll('#apiInfo .meta-item code');
+        items[0].textContent = data.provider || '—';
+        items[1].textContent = data.authority || '—';
+        items[2].textContent = data.audience || '—';
+        items[3].textContent = data.scope || '—';
+      } catch { /* optional */ }
+    }
+    loadHealth();
+    loadInfo();
+  </script>
 </body>
 </html>
