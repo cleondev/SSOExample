@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "Demo Profile",
+    "Projects": [
+      {
+        "Path": "src\\SsoExample.Api\\SsoExample.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "demo"
+      },
+      {
+        "Path": "src\\SsoExample.Web\\SsoExample.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "demo"
+      }
+    ]
+  }
+]

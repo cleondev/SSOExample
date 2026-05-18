@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SSOExample - Demo SSO trên .NET 10</title>
+  <link rel="stylesheet" href="/site.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563eb'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='Segoe UI,Arial' font-size='34' font-weight='800' fill='white'%3ES%3C/text%3E%3C/svg%3E">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+  <div id="impersonationBanner" class="impersonation-banner" hidden>
+    <span class="dot"></span>
+    <span class="text"></span>
+    <button id="endImpersonation" class="banner-btn">Kết thúc login-as</button>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#/dashboard" data-nav>
+        <span class="brand-logo">S</span>
+        <span class="brand-text">SSO<span class="brand-accent">Example</span></span>
+      </a>
+      <nav class="nav">
+        <a href="#/dashboard" data-nav data-route="dashboard" data-auth>Dashboard</a>
+        <a href="#/admin" data-nav data-route="admin" data-role="Admin">Admin</a>
+        <a href="#/audit-history" data-nav data-route="audit-history" data-role="Admin">Audit history</a>
+      </nav>
+      <div class="user-area">
+        <div id="userPill" class="user-pill" hidden>
+          <span class="avatar"></span>
+          <span class="user-meta">
+            <span class="user-name"></span>
+            <span class="user-role"></span>
+          </span>
+          <button id="logout" class="ghost">Đăng xuất</button>
+        </div>
+        <a id="signInButton" class="primary" href="#/signin">Đăng nhập</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <!-- ===== Templates ===== -->
+  <template id="tpl-signin">
+    <section class="signin">
+      <h1>Đăng nhập</h1>
+      <p class="lede">Chọn một trong hai flow. Trong production chỉ flow Microsoft Entra ID được dùng; flow password chỉ phục vụ giải thích/local demo.</p>
+      <div class="signin-grid">
+        <article class="panel signin-card primary-card">
+          <div class="signin-badge">Production flow</div>
+          <h2>Sign in with Microsoft</h2>
+          <p>Authorization Code + PKCE. Web tạo <code>code_verifier</code>, redirect user sang Entra ID, nhận <code>code</code>, đổi lấy access token.</p>
+          <button id="ssoStart" class="primary lg block">
+            <span class="ms-logo" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </span>
+            Sign in with Microsoft
+          </button>
+          <p class="muted small" id="ssoModeHint"></p>
+        </article>
+
+        <article class="panel signin-card">
+          <div class="signin-badge muted-badge">Local demo</div>
+          <h2>Đăng nhập bằng password</h2>
+          <p class="muted">Chỉ dùng trong dev. Production không nên cho web tự thu password — phải redirect sang IdP.</p>
+          <form id="passwordForm" class="form">
+            <label for="username">User name hoặc email</label>
+            <input id="username" autocomplete="username" value="admin" required>
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" value="Admin@123" required>
+            <button type="submit" class="primary block">Đăng nhập</button>
+          </form>
+          <details class="hint">
+            <summary>Tài khoản demo</summary>
+            <table class="mini">
+              <tr><th>User</th><th>Password</th><th>Role</th></tr>
+              <tr><td>admin</td><td>Admin@123</td><td>Admin</td></tr>
+              <tr><td>alice</td><td>Alice@123</td><td>User</td></tr>
+              <tr><td>bob</td><td>Bob@123</td><td>User, Support</td></tr>
+            </table>
+          </details>
+        </article>
+      </div>
+      <div id="signinError" class="alert error" hidden></div>
+    </section>
+  </template>
+
+  <template id="tpl-dashboard">
+    <section class="dashboard">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Dashboard</span>
+          <h1>Xin chào, <span id="greetName">bạn</span></h1>
+          <p class="lede">Token đang dùng để gọi <code>/api/me</code> và <code>/api/orders</code>. Mọi request đều mang header <code>Authorization: Bearer</code>.</p>
+        </div>
+        <button id="refreshDashboard" class="ghost">Làm mới</button>
+      </header>
+
+      <div class="grid two">
+        <article class="panel">
+          <h2>Thông tin principal</h2>
+          <dl class="props" id="meProps"><dt>Đang tải…</dt><dd></dd></dl>
+        </article>
+
+        <article class="panel">
+          <h2>Đơn hàng của tôi</h2>
+          <table class="table" id="ordersTable">
+            <thead><tr><th>#</th><th>Owner</th><th>Tổng</th><th>Trạng thái</th></tr></thead>
+            <tbody><tr><td colspan="4" class="muted">Đang tải…</td></tr></tbody>
+          </table>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Access token</h2>
+          <button id="copyToken" class="ghost sm">Copy</button>
+        </div>
+        <pre id="tokenView" class="token"></pre>
+        <p class="muted small">Token được decode chỉ ở client để debug. API mới là bên validate chữ ký, audience, scope.</p>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-admin">
+    <section class="admin">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Admin</span>
+          <h1>Quản trị user và audit</h1>
+          <p class="lede">Chỉ role <code>Admin</code> truy cập được. Login-as là backdoor có kiểm soát: bắt buộc lý do tối thiểu 10 ký tự và luôn ghi audit log.</p>
+        </div>
+        <button id="refreshAdmin" class="ghost">Làm mới</button>
+      </header>
+
+      <article class="panel">
+        <h2>Users</h2>
+        <p class="muted small">Bấm <strong>Login as</strong> ngay trên dòng user để bắt đầu phiên impersonation.</p>
+        <table class="table" id="usersTable">
+          <thead><tr><th>User</th><th>Email</th><th>Roles</th><th class="col-action">Hành động</th></tr></thead>
+          <tbody><tr><td colspan="4" class="muted">Đang tải…</td></tr></tbody>
+        </table>
+      </article>
+
+      <article class="panel">
+        <h2>Audit logs (auth events)</h2>
+        <p class="muted small">password_login, sso_authorize_demo_session, login_as.</p>
+        <table class="table" id="auditTable">
+          <thead><tr><th>Thời điểm</th><th>Action</th><th>Actor</th><th>Subject</th><th>Lý do</th><th>IP</th></tr></thead>
+          <tbody><tr><td colspan="6" class="muted">Đang tải…</td></tr></tbody>
+        </table>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-audit-history">
+    <section class="admin">
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Audit history</span>
+          <h1>Lịch sử request — ai gọi cái gì</h1>
+          <p class="lede">Middleware ghi nhận từng request tới <code>/api/*</code>: actor, method, path, status code, IP, user-agent và phiên impersonation (nếu có). Bỏ qua <code>/api/health</code>, <code>/api/info</code> và chính endpoint này.</p>
+        </div>
+        <button id="refreshAuditHistory" class="ghost">Làm mới</button>
+      </header>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Request log</h2>
+          <span class="muted small">Giữ 500 record gần nhất.</span>
+        </div>
+        <table class="table" id="requestLogTable">
+          <thead>
+            <tr>
+              <th>Thời điểm</th>
+              <th>Actor</th>
+              <th>Method</th>
+              <th>Path</th>
+              <th>Status</th>
+              <th>Impersonation</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="7" class="muted">Đang tải…</td></tr></tbody>
+        </table>
+      </article>
+    </section>
+  </template>
+
+  <template id="tpl-403">
+    <section class="empty">
+      <h1>403 · Không đủ quyền</h1>
+      <p>Trang này chỉ dành cho role <strong>Admin</strong>. Đăng nhập bằng <code>admin / Admin@123</code> trong demo.</p>
+      <a class="primary" href="#/signin">Quay lại đăng nhập</a>
+    </section>
+  </template>
+
+  <template id="tpl-401">
+    <section class="empty">
+      <h1>Bạn chưa đăng nhập</h1>
+      <p>Đăng nhập để xem dashboard và gọi API.</p>
+      <a class="primary" href="#/signin">Đăng nhập</a>
+    </section>
+  </template>
+
+  <dialog id="loginAsDialog" class="modal">
+    <form id="loginAsForm" class="form" method="dialog">
+      <header class="modal-head">
+        <h3>Login as <span id="loginAsTargetLabel">user</span></h3>
+        <button type="button" id="loginAsCancel" class="ghost sm" aria-label="Đóng">×</button>
+      </header>
+      <label for="loginAsReason">Lý do (tối thiểu 10 ký tự)</label>
+      <textarea id="loginAsReason" rows="3" minlength="10" required>Hỗ trợ kiểm tra lỗi đơn hàng theo ticket #12345</textarea>
+      <footer class="modal-actions">
+        <button type="button" class="ghost" id="loginAsCancel2">Huỷ</button>
+        <button type="submit" class="danger">Login as user</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

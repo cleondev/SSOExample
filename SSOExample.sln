@@ -1,0 +1,38 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11806.211 stable
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SsoExample.Api", "src\SsoExample.Api\SsoExample.Api.csproj", "{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SsoExample.Web", "src\SsoExample.Web\SsoExample.Web.csproj", "{8D6F873B-4819-4C76-9CE5-854569590DB4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{A6CF796E-7478-47F4-A00A-232DEDC29C95}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adopting-sso.md = docs\adopting-sso.md
+		docs\azure-setup.md = docs\azure-setup.md
+		docs\database-schema.sql = docs\database-schema.sql
+		docs\sso-design.md = docs\sso-design.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F7D10C9-0199-4371-A4E7-4F9E641D20EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D6F873B-4819-4C76-9CE5-854569590DB4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B80DAFE-2127-4423-9DB9-93DC17EB073A}
+	EndGlobalSection
+EndGlobal
